@@ -1,0 +1,4 @@
+pyspark==3.5.1
+matplotlib==3.8.4
+pyproj==3.6.1
+numpy==1.26.4
