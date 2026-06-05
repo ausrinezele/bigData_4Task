@@ -97,7 +97,6 @@ def main() -> None:
         )
         print(f"Saved trajectory CSV to: {trajectory_csv_dir}")
         print(f"Saved trajectory plot to: {trajectory_plot_path}")
-        print("Next step: inspect the validated plot and write the final report.")
 
     finally:
         spark.stop()

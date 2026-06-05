@@ -1,10 +1,12 @@
 from datetime import timedelta
+import math
 from pathlib import Path
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 from pyspark.sql import DataFrame, Row
 from pyspark.sql import functions as F
 
@@ -37,6 +39,13 @@ def save_trajectory_outputs(
     if pdf.empty:
         raise RuntimeError("No trajectory records found for the selected event window.")
 
+    plot_trajectory_pdf(pdf, event, plot_path)
+
+    return csv_dir, plot_path
+
+
+def plot_trajectory_pdf(pdf, event: Row, plot_path: Path) -> None:
+    pdf = pdf.copy()
     pdf["timestamp"] = pdf["timestamp"].astype(str)
     pdf["vessel_label"] = pdf.apply(
         lambda row: f"{row['mmsi']} - {row['vessel_name']}"
@@ -45,46 +54,97 @@ def save_trajectory_outputs(
         axis=1,
     )
 
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(11, 8.5))
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-    for label, vessel_points in pdf.groupby("vessel_label"):
+    for index, (label, vessel_points) in enumerate(pdf.groupby("vessel_label")):
         vessel_points = vessel_points.sort_values("timestamp")
+        color = colors[index % len(colors)]
         ax.plot(
             vessel_points["longitude"],
             vessel_points["latitude"],
             marker="o",
-            markersize=3,
-            linewidth=1.5,
+            markersize=3.2,
+            linewidth=1.8,
+            color=color,
             label=label,
         )
+
+        if len(vessel_points) >= 2:
+            arrow_start = vessel_points.iloc[-2]
+            arrow_end = vessel_points.iloc[-1]
+            ax.annotate(
+                "",
+                xy=(arrow_end["longitude"], arrow_end["latitude"]),
+                xytext=(arrow_start["longitude"], arrow_start["latitude"]),
+                arrowprops={"arrowstyle": "->", "lw": 1.8, "color": color},
+            )
+
         first = vessel_points.iloc[0]
         last = vessel_points.iloc[-1]
-        ax.annotate("start", (first["longitude"], first["latitude"]), fontsize=8)
-        ax.annotate("end", (last["longitude"], last["latitude"]), fontsize=8)
+        ax.scatter([first["longitude"]], [first["latitude"]], color=color, s=42, marker="s")
+        ax.scatter([last["longitude"]], [last["latitude"]], color=color, s=52, marker="^")
+        ax.annotate(
+            "start",
+            (first["longitude"], first["latitude"]),
+            xytext=(5, 5),
+            textcoords="offset points",
+            fontsize=8,
+            color=color,
+        )
+        ax.annotate(
+            "end",
+            (last["longitude"], last["latitude"]),
+            xytext=(5, -10),
+            textcoords="offset points",
+            fontsize=8,
+            color=color,
+        )
 
     ax.scatter(
         [event.event_longitude],
         [event.event_latitude],
         color="red",
         marker="x",
-        s=120,
-        linewidths=2,
+        s=180,
+        linewidths=3,
         label="closest point",
+        zorder=5,
+    )
+    ax.annotate(
+        f"{event.distance_meters:.2f} m",
+        (event.event_longitude, event.event_latitude),
+        xytext=(12, 12),
+        textcoords="offset points",
+        fontsize=9,
+        color="red",
+        weight="bold",
     )
 
+    event_timestamp_text = str(event.event_timestamp)
+    if "UTC" not in event_timestamp_text:
+        event_timestamp_text = f"{event_timestamp_text} UTC"
+
     ax.set_title(
-        "Closest Vessel Encounter Trajectories\n"
-        f"{event.event_timestamp} UTC, distance {event.distance_meters:.2f} m"
+        "Validated Closest Vessel Encounter\n"
+        f"{event_timestamp_text} | "
+        f"{event.distance_meters:.2f} m separation | "
+        f"{event.time_delta_seconds} s timestamp gap"
     )
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
+
+    mean_latitude = pdf["latitude"].mean()
+    ax.set_aspect(1.0 / max(0.1, math.cos(math.radians(mean_latitude))))
+    ax.ticklabel_format(axis="both", style="plain", useOffset=False)
+    ax.xaxis.set_major_formatter(FormatStrFormatter("%.6f"))
+    ax.yaxis.set_major_formatter(FormatStrFormatter("%.6f"))
+    ax.margins(0.08)
     ax.grid(True, alpha=0.3)
-    ax.legend()
+    ax.legend(loc="best", framealpha=0.95)
     fig.tight_layout()
     fig.savefig(plot_path, dpi=200)
     plt.close(fig)
-
-    return csv_dir, plot_path
 
 
 def format_event_summary(event: Row) -> str:

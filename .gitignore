@@ -9,5 +9,6 @@ data/*
 
 outputs/*
 !outputs/.gitkeep
+!outputs/*.png
 
 .DS_Store
