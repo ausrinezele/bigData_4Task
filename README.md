@@ -106,23 +106,8 @@ outputs/collision_trajectory.png
 
 ## Docker Image Export
 
-To publish the image to Docker Hub under the `ausrbu` account:
-
-```bash
-docker login
-docker build -t ais-collision-detector .
-docker tag ais-collision-detector ausrbu/ais-collision-detector:latest
-docker push ausrbu/ais-collision-detector:latest
-```
-
 Docker Hub image link:
 
 ```text
 https://hub.docker.com/r/ausrbu/ais-collision-detector
-```
-
-If an exported Docker image is required instead:
-
-```bash
-docker save ais-collision-detector -o ais-collision-detector.tar
 ```
