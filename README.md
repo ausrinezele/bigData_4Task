@@ -96,6 +96,7 @@ After a successful run, the main generated outputs are:
 outputs/closest_encounters/
 outputs/collision_trajectory_csv/
 outputs/collision_trajectory.png
+outputs/final_result.txt
 ```
 
 - `closest_encounters/` contains the ranked candidate proximity events.
@@ -103,6 +104,26 @@ outputs/collision_trajectory.png
   selected vessel pair.
 - `collision_trajectory.png` visualizes both vessel tracks from 10 minutes
   before to 10 minutes after the closest point.
+- `final_result.txt` contains a compact commit-friendly summary of the final
+  selected event.
+
+## Method Summary
+
+The pipeline:
+
+1. Loads raw AIS CSV files with PySpark.
+2. Filters records to December 2021.
+3. Removes invalid coordinates and applies the 50 nautical mile radius filter.
+4. Removes duplicates, stationary vessels, and unrealistic GPS jumps.
+5. Uses one-minute time buckets and neighboring 100-meter spatial grid cells to
+   avoid a full Cartesian product.
+6. Calculates exact haversine distances only for candidate pairs.
+7. Validates the selected event by requiring trajectory support before and after
+   the closest point for both vessels.
+8. Saves the trajectory plot and candidate outputs.
+
+Pandas is used only for plotting the small final trajectory window after Spark
+has already completed the large-scale processing.
 
 ## Docker Image Export
 
@@ -111,3 +132,4 @@ Docker Hub image link:
 ```text
 https://hub.docker.com/r/ausrbu/ais-collision-detector
 ```
+
