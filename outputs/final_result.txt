@@ -1,0 +1,44 @@
+AIS Collision Detector - Final Result
+=====================================
+
+Result type
+-----------
+Closest validated AIS proximity event indicating a possible collision/contact.
+AIS data alone cannot prove an externally confirmed maritime accident.
+
+Vessel A
+--------
+MMSI: 265547110
+Name: RESCUE SJOMANSHUSET
+
+Vessel B
+--------
+MMSI: 265695200
+Name: RESCUE PANTAMERA
+
+Closest event
+-------------
+Timestamp: 2021-12-16 10:25:03 UTC
+Latitude: 55.575245
+Longitude: 14.356953
+Minimum separation: 0.19 meters
+Timestamp gap between AIS records: 4 seconds
+
+Trajectory support
+------------------
+Vessel A points in 20-minute window: 70
+Vessel A points before/after event: 38 before, 31 after
+Vessel B points in 20-minute window: 69
+Vessel B points before/after event: 37 before, 32 after
+
+Generated outputs
+-----------------
+Ranked candidates: outputs/closest_encounters/
+Trajectory CSV: outputs/collision_trajectory_csv/
+Trajectory plot: outputs/collision_trajectory.png
+
+Notes
+-----
+The selected event is the closest candidate that passed trajectory-support
+validation. Earlier zero-distance candidates were rejected because they were
+consistent with one-point AIS identity/GPS duplication artifacts.

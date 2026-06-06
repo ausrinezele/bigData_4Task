@@ -10,5 +10,6 @@ data/*
 outputs/*
 !outputs/.gitkeep
 !outputs/*.png
+!outputs/final_result.txt
 
 .DS_Store
